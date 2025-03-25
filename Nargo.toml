@@ -1,6 +1,6 @@
 [package]
 name = "ripemd160"
 type = "lib"
-authors = [""]
+authors = ["Distributed Lab"]
 
 [dependencies]

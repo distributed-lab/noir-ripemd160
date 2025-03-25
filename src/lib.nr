@@ -1,21 +1,5 @@
 use std::{hash::Hasher, wrapping_add};
 
-/// The length of data array must be the same with Field type size (in bytes)
-struct Ripemd160Hasher<let CUP: u32> {
-    data: [u8; CUP],
-}
-
-impl<let CUP: u32> Hasher for Ripemd160Hasher<CUP> {
-    fn finish(self) -> Field {
-        let hash = ripemd160(self.data);
-        Field::from_be_bytes(hash)
-    }
-
-    fn write(&mut self, input: Field) {
-        self.data = input.to_be_bytes();
-    }
-}
-
 // All this values you can see here: https://en.bitcoin.it/wiki/RIPEMD-160
 global indexes: [[u8; 16]; 5] = [
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -49,11 +33,29 @@ global shifts_stroke: [[u8; 16]; 5] = [
     [8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11],
 ];
 
+/// The length of data array must be the same with Field type size (in bytes)
+pub struct Ripemd160Hasher<let CAP: u32> {
+    data: [u8; CAP],
+}
+
+impl<let CAP: u32> Hasher for Ripemd160Hasher<CAP> {
+    fn finish(self) -> Field {
+        let hash = ripemd160(self.data);
+        Field::from_be_bytes(hash)
+    }
+
+    fn write(&mut self, input: Field) {
+        self.data = input.to_be_bytes();
+    }
+}
+
 /// Accepts an array of bytes with any length and return 20-bytes array as hash
-fn ripemd160<let N: u32>(message: [u8; N]) -> [u8; 20] {
+/// Data must be represented in big-endian order
+pub fn ripemd160<let N: u32>(message: [u8; N]) -> [u8; 20] {
     let mut with_added_bytes = message.as_slice().push_back(0x80);
 
-    // Add 0 until data length is 56 mod(64) (than we add raw message length (8 bytes) and have a length that is a multiple of 64 - the processing block size)
+    // Add 0 until data length is 56 mod(64) (than we add raw message length (8 bytes)
+    // And have a length that is a multiple of 64 - the processing block size)
     let mut need_to_add: i32 = 64 - ((with_added_bytes.len() % 64) as i32) - 8;
     if need_to_add < 0 {
         need_to_add += 64;
@@ -185,7 +187,8 @@ fn rotate_left(x: u32, n: u8) -> u32 {
     ((x << n) | (x >> (32 - n))) & 0xffffffff
 }
 
-/// Returns result after processing values depending on round num (you can see this functions here: https://en.bitcoin.it/wiki/RIPEMD-160)
+/// Returns result after processing values depending on round num
+// (you can see this functions here: https://en.bitcoin.it/wiki/RIPEMD-160)
 fn bit_func(j: u32, x: u32, y: u32, z: u32) -> u32 {
     if j < 16 {
         x ^ y ^ z
@@ -200,7 +203,8 @@ fn bit_func(j: u32, x: u32, y: u32, z: u32) -> u32 {
     }
 }
 
-// Returns ripemd160 constant (you can see them here: https://en.bitcoin.it/wiki/RIPEMD-160)
+// Returns ripemd160 constant
+// (you can see them here: https://en.bitcoin.it/wiki/RIPEMD-160)
 fn hex_const(j: u32, stroke: bool) -> u32 {
     if !stroke {
         if j < 16 {
@@ -254,7 +258,7 @@ pub fn byte_array_to_hex(array: [u8; 20]) -> str<40> {
 }
 
 #[test]
-fn test_main() {
+fn test_ripemd160() {
     assert(
         "9C1185A5C5E9FC54612808977EE8F548B2258D31" == byte_array_to_hex(ripemd160("".as_bytes())),
     );
@@ -268,7 +272,10 @@ fn test_main() {
         "37F332F68DB77BD9D7EDD4969571AD671CF9DD3B"
             == byte_array_to_hex(ripemd160("The quick brown fox jumps over the lazy dog".as_bytes())),
     );
+}
 
+#[test]
+fn test_hasher() {
     let message = "The quick brown fox jumps over1";
 
     let expected_res = "51FBA1A24FBD58CB6E3D2C85A3D2379DE700680C";
@@ -278,5 +285,4 @@ fn test_main() {
     hasher.write(Field::from_be_bytes(message.as_bytes()));
 
     assert(expected_res == byte_array_to_hex(hasher.finish().to_be_bytes()));
-    
 }
