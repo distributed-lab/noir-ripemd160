@@ -56,12 +56,7 @@ pub fn ripemd160<let N: u32>(message: [u8; N]) -> [u8; 20] {
 
     // Add 0 until data length is 56 mod(64) (than we add raw message length (8 bytes)
     // And have a length that is a multiple of 64 - the processing block size)
-    let mut need_to_add: i32 = 64 - ((with_added_bytes.len() % 64) as i32) - 8;
-    if need_to_add < 0 {
-        need_to_add += 64;
-    }
-
-    for _ in 0..need_to_add {
+    for _ in 0..((64 - ((N + 1 % 64) as i32) - 8 + 64) % 64) {
         with_added_bytes = with_added_bytes.push_back(0);
     }
 
@@ -86,7 +81,7 @@ pub fn ripemd160<let N: u32>(message: [u8; N]) -> [u8; 20] {
     let mut h3 = 0x10325476;
     let mut h4 = 0xC3D2E1F0;
 
-    for i in 0..(with_added_bytes.len() / 64) {
+    for i in 0..((8 + ((64 - ((N + 1 % 64) as i32) - 8 + 64) % 64) as u32 + N + 1) / 64) {
         let mut A = h0;
         let mut B = h1;
         let mut C = h2;
