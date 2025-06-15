@@ -7,7 +7,7 @@
 
 ```toml
 [dependencies]
-ripemd160 = { tag = "v0.0.2", git = "https://github.com/distributed-lab/noir-ripemd160" }
+ripemd160 = { tag = "v0.0.3", git = "https://github.com/distributed-lab/noir-ripemd160" }
 ```
 
 ### Employ in your `Noir` code as following
